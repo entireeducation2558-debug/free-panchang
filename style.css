@@ -1,0 +1,422 @@
+// Hindi Panchang Astronomical Engine & Interactive Logic
+function safeCreateIcons() {
+    try {
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+        }
+    } catch (err) {
+        console.warn('Icons load warning:', err);
+    }
+}
+
+const CITIES = {
+    delhi:     { name: "नई दिल्ली, दिल्ली", lat: 28.6139, lon: 77.2090 },
+    varanasi:  { name: "वाराणसी (काशी), उत्तर प्रदेश", lat: 25.3176, lon: 82.9739 },
+    agra:      { name: "आगरा, उत्तर प्रदेश", lat: 27.1767, lon: 78.0081 },
+    ayodhya:   { name: "अयोध्या, उत्तर प्रदेश", lat: 26.7922, lon: 82.1998 },
+    ujjain:    { name: "उज्जैन, मध्य प्रदेश", lat: 23.1765, lon: 75.7885 },
+    mumbai:    { name: "मुंबई, महाराष्ट्र", lat: 19.0760, lon: 72.8777 },
+    jaipur:    { name: "जयपुर, राजस्थान", lat: 26.9124, lon: 75.7873 },
+    prayagraj: { name: "प्रयागराज, उत्तर प्रदेश", lat: 25.4358, lon: 81.8463 },
+    haridwar:  { name: "हरिद्वार, उत्तराखंड", lat: 29.9457, lon: 78.1642 },
+    kolkata:   { name: "कोलकाता, पश्चिम बंगाल", lat: 22.5726, lon: 88.3639 },
+    bengaluru: { name: "बेंगलुरु, कर्नाटक", lat: 12.9716, lon: 77.5946 },
+    chennai:   { name: "चेन्नई, तमिलनाडु", lat: 13.0827, lon: 80.2707 },
+    patna:     { name: "पटना, बिहार", lat: 25.5941, lon: 85.1376 },
+    ahmedabad: { name: "अहमदाबाद, गुजरात", lat: 23.0225, lon: 72.5714 }
+};
+
+const HINDI_DAYS = ["रविवार", "सोमवार", "मंगलवार", "बुधवार", "गुरुवार", "शुक्रवार", "शनिवार"];
+const HINDI_MONTHS_GREG = ["जनवरी", "फ़रवरी", "मार्च", "अप्रैल", "मई", "जून", "जुलाई", "अगस्त", "सितम्बर", "अक्टूबर", "नवम्बर", "दिसम्बर"];
+const HINDU_MONTHS = ["चैत्र", "वैशाख", "ज्येष्ठ", "आषाढ़", "श्रावण", "भाद्रपद", "आश्विन", "कार्तिक", "मार्गशीर्ष", "पौष", "माघ", "फाल्गुन"];
+const TITHIS = [
+    "प्रतिपदा", "द्वितीया", "तृतीया", "चतुर्थी", "पंचमी", "षष्ठी", "सप्तमी", "अष्टमी",
+    "नवमी", "दशमी", "एकादशी", "द्वादशी", "त्रयोदशी", "चतुर्दशी", "पूर्णिमा",
+    "प्रतिपदा", "द्वितीया", "तृतीया", "चतुर्थी", "पंचमी", "षष्ठी", "सप्तमी", "अष्टमी",
+    "नवमी", "दशमी", "एकादशी", "द्वादशी", "त्रयोदशी", "चतुर्दशी", "अमावस्या"
+];
+const NAKSHATRAS = [
+    "अश्विनी", "भरणी", "कृत्तिका", "रोहिणी", "मृगशिरा", "आर्द्रा", "पुनर्वसु", "पुष्य", "आश्लेषा",
+    "मघा", "पूर्वाफाल्गुनी", "उत्तराफाल्गुनी", "हस्त", "चित्रा", "स्वाती", "विशाखा", "अनुराधा", "ज्येष्ठा",
+    "मूल", "पूर्वाषाढ़ा", "उत्तराषाढ़ा", "श्रवण", "धनिष्ठा", "शतभिषा", "पूर्वभाद्रपद", "उत्तरभाद्रपद", "रेवती"
+];
+const YOGAS = [
+    "विष्कम्भ", "प्रीति", "आयुष्मान", "सौभाग्य", "शोभन", "अतिगण्ड", "सुकर्मा", "धृति", "शूल",
+    "गण्ड", "वृद्धि", "ध्रुव", "व्याघात", "हर्षण", "वज्र", "सिद्धि", "व्यतीपात", "वरीयान",
+    "परिघ", "शिव", "सिद्ध", "साध्य", "शुभ", "शुक्ल", "ब्रह्म", "इन्द्र", "वैधृति"
+];
+const KARANAS = ["बव", "बालव", "कौलव", "तैतिल", "गर", "वणिज", "विष्टि (भद्रा)"];
+const RASHIS = ["मेष", "वृषभ", "मिथुन", "कर्क", "सिंह", "कन्या", "तुला", "वृश्चिक", "धनु", "मकर", "कुम्भ", "मीन"];
+const DISHA_SHOOL = ["पश्चिम दिशा", "पूर्व दिशा", "उत्तर दिशा", "उत्तर दिशा", "दक्षिण दिशा", "पश्चिम दिशा", "पूर्व दिशा"];
+
+const RAHU_SLOTS   = [8, 2, 7, 5, 6, 4, 3];
+const YAMA_SLOTS   = [5, 4, 3, 2, 1, 7, 6];
+const GULIKA_SLOTS = [7, 6, 5, 4, 3, 2, 1];
+
+const CHOGHADIYA_ORDER = [
+    ["उद्वेग", "चर", "लाभ", "अमृत", "काल", "शुभ", "रोग", "उद्वेग"],
+    ["अमृत", "काल", "शुभ", "रोग", "उद्वेग", "चर", "लाभ", "अमृत"],
+    ["रोग", "उद्वेग", "चर", "लाभ", "अमृत", "काल", "शुभ", "रोग"],
+    ["लाभ", "अमृत", "काल", "शुभ", "रोग", "उद्वेग", "चर", "लाभ"],
+    ["शुभ", "रोग", "उद्वेग", "चर", "लाभ", "अमृत", "काल", "शुभ"],
+    ["चर", "लाभ", "अमृत", "काल", "शुभ", "रोग", "उद्वेग", "चर"],
+    ["काल", "शुभ", "रोग", "उद्वेग", "चर", "लाभ", "अमृत", "काल"]
+];
+
+function toHindiDigits(str) {
+    const map = ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'];
+    return String(str).replace(/[0-9]/g, d => map[d]);
+}
+
+function formatMinutesToTime(totalMins) {
+    let mins = ((Math.round(totalMins) % 1440) + 1440) % 1440;
+    let h = Math.floor(mins / 60);
+    let m = mins % 60;
+    const ampm = h >= 12 ? "PM" : "AM";
+    h = h % 12;
+    if (h === 0) h = 12;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+
+function calculateSunTimes(dateObj, lat, lon) {
+    const start = new Date(dateObj.getFullYear(), 0, 0);
+    const diff = dateObj - start;
+    const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    const gamma = (2 * Math.PI / 365) * (dayOfYear - 1);
+    const eqTime = 229.18 * (0.000075 + 0.001868 * Math.cos(gamma) - 0.032077 * Math.sin(gamma)
+        - 0.014615 * Math.cos(2 * gamma) - 0.040849 * Math.sin(2 * gamma));
+    const decl = 0.006918 - 0.399912 * Math.cos(gamma) + 0.070257 * Math.sin(gamma)
+        - 0.006758 * Math.cos(2 * gamma) + 0.000907 * Math.sin(2 * gamma)
+        - 0.002697 * Math.cos(3 * gamma) + 0.00148 * Math.sin(3 * gamma);
+
+    const latRad = lat * Math.PI / 180;
+    const zenith = 90.833 * Math.PI / 180;
+    let cosHA = (Math.cos(zenith) / (Math.cos(latRad) * Math.cos(decl))) - Math.tan(latRad) * Math.tan(decl);
+    cosHA = Math.max(-1, Math.min(1, cosHA));
+    const haDeg = Math.acos(cosHA) * 180 / Math.PI;
+
+    const tzOffset = 330;
+    const sunriseMins = 720 - 4 * (lon + haDeg) - eqTime + tzOffset;
+    const sunsetMins  = 720 - 4 * (lon - haDeg) - eqTime + tzOffset;
+
+    return { sunriseMins, sunsetMins };
+}
+
+function calculateAstronomicalPanchang(dateObj, city) {
+    const { sunriseMins, sunsetMins } = calculateSunTimes(dateObj, city.lat, city.lon);
+
+    const utcTimestamp = Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), 0, 30, 0);
+    const jd = (utcTimestamp / 86400000) + 2440587.5;
+    const d = jd - 2451545.0;
+
+    const ayanamsa = 23.853 + (d / 365.25) * 0.01396;
+
+    const gSun = ((357.529 + 0.98560028 * d) % 360 + 360) % 360;
+    const qSun = ((280.459 + 0.98564736 * d) % 360 + 360) % 360;
+    const gSunRad = gSun * Math.PI / 180;
+    const sunTrop = (qSun + 1.915 * Math.sin(gSunRad) + 0.020 * Math.sin(2 * gSunRad)) % 360;
+    const sunSid = ((sunTrop - ayanamsa) % 360 + 360) % 360;
+
+    const lMoon = ((218.316 + 13.176396 * d) % 360 + 360) % 360;
+    const mMoon = ((134.963 + 13.064993 * d) % 360 + 360) % 360;
+    const mMoonRad = mMoon * Math.PI / 180;
+
+    const moonTrop = (lMoon + 6.289 * Math.sin(mMoonRad) - 1.274 * Math.sin(2 * (lMoon - sunTrop) * Math.PI / 180 - mMoonRad)
+        + 0.658 * Math.sin(2 * (lMoon - sunTrop) * Math.PI / 180) - 0.186 * Math.sin(gSunRad)) % 360;
+    const moonSid = ((moonTrop - ayanamsa) % 360 + 360) % 360;
+
+    const elongation = ((moonSid - sunSid) % 360 + 360) % 360;
+    const tithiFloat = elongation / 12;
+    const tithiIdx = Math.floor(tithiFloat);
+    const nextTithiIdx = (tithiIdx + 1) % 30;
+    const paksha = tithiIdx < 15 ? "शुक्ल पक्ष" : "कृष्ण पक्ष";
+    const tithiRemFrac = 1 - (tithiFloat - tithiIdx);
+    const tithiEndMins = sunriseMins + tithiRemFrac * 1380;
+
+    const nakFloat = moonSid / (360 / 27);
+    const nakIdx = Math.floor(nakFloat);
+    const nextNakIdx = (nakIdx + 1) % 27;
+    const nakRemFrac = 1 - (nakFloat - nakIdx);
+    const nakEndMins = sunriseMins + nakRemFrac * 1410;
+
+    const yogaDeg = (sunSid + moonSid) % 360;
+    const yogaFloat = yogaDeg / (360 / 27);
+    const yogaIdx = Math.floor(yogaFloat);
+    const nextYogaIdx = (yogaIdx + 1) % 27;
+    const yogaRemFrac = 1 - (yogaFloat - yogaIdx);
+    const yogaEndMins = sunriseMins + yogaRemFrac * 1340;
+
+    const karanaHalfIdx = Math.floor(elongation / 6);
+    let karanaName = KARANAS[karanaHalfIdx % 7];
+    let nextKaranaName = KARANAS[(karanaHalfIdx + 1) % 7];
+    if (karanaHalfIdx === 0) karanaName = "किंस्तुघ्न";
+    if (karanaHalfIdx === 57) karanaName = "शकुनि";
+    if (karanaHalfIdx === 58) karanaName = "चतुष्पद";
+    if (karanaHalfIdx === 59) karanaName = "नाग";
+
+    const moonRashi = RASHIS[Math.floor(moonSid / 30)];
+    const sunRashi = RASHIS[Math.floor(sunSid / 30)];
+
+    const sunRashiIdx = Math.floor(sunSid / 30);
+    const hinduMonthIdx = (sunRashiIdx + (tithiIdx >= 15 ? 1 : 0)) % 12;
+    const hinduMonth = HINDU_MONTHS[hinduMonthIdx];
+
+    const year = dateObj.getFullYear();
+    const vikramSamvat = (dateObj.getMonth() >= 3) ? year + 57 : year + 56;
+    const shakaSamvat = (dateObj.getMonth() >= 3) ? year - 78 : year - 79;
+
+    const ritus = ["वसन्त ऋतु", "ग्रीष्म ऋतु", "वर्षा ऋतु", "शरद ऋतु", "हेमन्त ऋतु", "शिशिर ऋतु"];
+    const ritu = ritus[Math.floor(hinduMonthIdx / 2)];
+
+    const moonriseMins = (sunriseMins + (tithiIdx * 48)) % 1440;
+    const moonsetMins = (moonriseMins + 735) % 1440;
+
+    const dayDuration = sunsetMins - sunriseMins;
+    const eighthPart = dayDuration / 8;
+    const midday = (sunriseMins + sunsetMins) / 2;
+
+    const weekday = dateObj.getDay();
+    const rahuSlot = RAHU_SLOTS[weekday] - 1;
+    const yamaSlot = YAMA_SLOTS[weekday] - 1;
+    const gulikaSlot = GULIKA_SLOTS[weekday] - 1;
+
+    return {
+        city, dateObj, weekday,
+        vara: HINDI_DAYS[weekday],
+        vikramSamvat, shakaSamvat, hinduMonth, paksha, ritu,
+        sunrise: formatMinutesToTime(sunriseMins),
+        sunset: formatMinutesToTime(sunsetMins),
+        moonrise: formatMinutesToTime(moonriseMins),
+        moonset: formatMinutesToTime(moonsetMins),
+        tithi: TITHIS[tithiIdx],
+        tithiEnd: formatMinutesToTime(tithiEndMins),
+        nextTithi: TITHIS[nextTithiIdx],
+        nakshatra: NAKSHATRAS[nakIdx],
+        nakshatraEnd: formatMinutesToTime(nakEndMins),
+        nextNakshatra: NAKSHATRAS[nextNakIdx],
+        yoga: YOGAS[yogaIdx],
+        yogaEnd: formatMinutesToTime(yogaEndMins),
+        nextYoga: YOGAS[nextYogaIdx],
+        karana: karanaName,
+        karanaEnd: formatMinutesToTime(tithiEndMins),
+        nextKarana: nextKaranaName,
+        moonRashi, sunRashi,
+        abhijit: `${formatMinutesToTime(midday - 24)} - ${formatMinutesToTime(midday + 24)}`,
+        brahma: `${formatMinutesToTime(sunriseMins - 96)} - ${formatMinutesToTime(sunriseMins - 48)}`,
+        amrit: `${formatMinutesToTime(sunriseMins + eighthPart * 3.2)} - ${formatMinutesToTime(sunriseMins + eighthPart * 4.4)}`,
+        vijaya: `${formatMinutesToTime(sunriseMins + eighthPart * 5.2)} - ${formatMinutesToTime(sunriseMins + eighthPart * 5.8)}`,
+        rahu: `${formatMinutesToTime(sunriseMins + rahuSlot * eighthPart)} - ${formatMinutesToTime(sunriseMins + (rahuSlot + 1) * eighthPart)}`,
+        yama: `${formatMinutesToTime(sunriseMins + yamaSlot * eighthPart)} - ${formatMinutesToTime(sunriseMins + (yamaSlot + 1) * eighthPart)}`,
+        gulika: `${formatMinutesToTime(sunriseMins + gulikaSlot * eighthPart)} - ${formatMinutesToTime(sunriseMins + (gulikaSlot + 1) * eighthPart)}`,
+        dishaShool: DISHA_SHOOL[weekday],
+        sunriseMins, eighthPart
+    };
+}
+
+function getSpecialFestivalNote(data) {
+    if (data.tithi === "एकादशी") return `विशेष व्रत: ${data.hinduMonth} ${data.paksha} एकादशी व्रत`;
+    if (data.tithi === "पूर्णिमा") return `विशेष पर्व: ${data.hinduMonth} पूर्णिमा स्नान एवं सत्यनारायण व्रत`;
+    if (data.tithi === "अमावस्या") return `विशेष तिथि: ${data.hinduMonth} अमावस्या (पितृ तर्पण एवं दान पुण्य)`;
+    if (data.tithi === "चतुर्थी" && data.paksha === "कृष्ण पक्ष") return `विशेष व्रत: संकष्टी श्री गणेश चतुर्थी व्रत`;
+    if (data.tithi === "त्रयोदशी") return `विशेष व्रत: प्रदोष व्रत (भगवान शिव आराधना)`;
+    return `विशेष: ${data.nakshatra} नक्षत्र एवं ${data.yoga} योग का शुभ संयोग`;
+}
+
+function renderChoghadiya(data) {
+    const grid = document.getElementById('choghadiya-grid');
+    const names = CHOGHADIYA_ORDER[data.weekday];
+    const goodTypes = ["अमृत", "शुभ", "लाभ"];
+    const neutralTypes = ["चर"];
+
+    grid.innerHTML = names.map((name, i) => {
+        const start = formatMinutesToTime(data.sunriseMins + i * data.eighthPart);
+        const end = formatMinutesToTime(data.sunriseMins + (i + 1) * data.eighthPart);
+
+        let badgeClass = "bg-rose-50 border-rose-200 text-rose-900";
+        let tagClass = "bg-rose-200 text-rose-900";
+        let statusText = "अशुभ";
+
+        if (goodTypes.includes(name)) {
+            badgeClass = "bg-emerald-50 border-emerald-200 text-emerald-900";
+            tagClass = "bg-emerald-200 text-emerald-900";
+            statusText = "अति शुभ";
+        } else if (neutralTypes.includes(name)) {
+            badgeClass = "bg-amber-50 border-amber-200 text-amber-900";
+            tagClass = "bg-amber-200 text-amber-900";
+            statusText = "सामान्य";
+        }
+
+        return `
+            <div class="p-4 rounded-2xl border ${badgeClass} flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="font-extrabold text-base">${name} चौघड़िया</span>
+                    <span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${tagClass}">${statusText}</span>
+                </div>
+                <div class="text-xs font-mono font-semibold opacity-85">${start} - ${end}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+let currentPanchangData = null;
+
+function calculateAndRenderPanchang() {
+    const dateInput = document.getElementById('panchang-date').value;
+    const cityKey = document.getElementById('panchang-city').value;
+    const city = CITIES[cityKey] || CITIES.agra;
+
+    const parts = dateInput.split('-');
+    const dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+
+    const data = calculateAstronomicalPanchang(dateObj, city);
+    currentPanchangData = data;
+
+    document.getElementById('res-city-badge').textContent = `📍 ${city.name}`;
+    document.getElementById('res-samvat-badge').textContent = `विक्रम संवत ${toHindiDigits(data.vikramSamvat)} • शक संवत ${toHindiDigits(data.shakaSamvat)}`;
+
+    const dayNumHi = toHindiDigits(dateObj.getDate());
+    const monthNameHi = HINDI_MONTHS_GREG[dateObj.getMonth()];
+    const yearHi = toHindiDigits(dateObj.getFullYear());
+    document.getElementById('res-hindi-date-title').textContent = `${data.vara}, ${dayNumHi} ${monthNameHi} ${yearHi}`;
+    document.getElementById('res-hindu-month-subtitle').textContent = `${data.hinduMonth} मास, ${data.paksha}, ${data.tithi} तिथि • ${data.ritu}`;
+
+    document.getElementById('res-sunrise').textContent = data.sunrise;
+    document.getElementById('res-sunset').textContent = data.sunset;
+    document.getElementById('res-moonrise').textContent = data.moonrise;
+    document.getElementById('res-moonset').textContent = data.moonset;
+    document.getElementById('res-festival-highlight').innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> ${getSpecialFestivalNote(data)}`;
+
+    document.getElementById('card-tithi').textContent = `${data.paksha.split(' ')[0]} ${data.tithi}`;
+    document.getElementById('card-tithi-end').textContent = `समाप्ति: ${data.tithiEnd} तक`;
+    document.getElementById('card-tithi-next').textContent = `तदुपरांत ${data.nextTithi}`;
+
+    document.getElementById('card-nakshatra').textContent = data.nakshatra;
+    document.getElementById('card-nakshatra-end').textContent = `समाप्ति: ${data.nakshatraEnd} तक`;
+    document.getElementById('card-nakshatra-next').textContent = `तदुपरांत ${data.nextNakshatra}`;
+
+    document.getElementById('card-yoga').textContent = data.yoga;
+    document.getElementById('card-yoga-end').textContent = `समाप्ति: ${data.yogaEnd} तक`;
+    document.getElementById('card-yoga-next').textContent = `तदुपरांत ${data.nextYoga}`;
+
+    document.getElementById('card-karana').textContent = data.karana;
+    document.getElementById('card-karana-end').textContent = `समाप्ति: ${data.karanaEnd} तक`;
+    document.getElementById('card-karana-next').textContent = `तदुपरांत ${data.nextKarana}`;
+
+    document.getElementById('card-vara').textContent = data.vara;
+    document.getElementById('card-moon-rashi').textContent = `चन्द्र राशि: ${data.moonRashi}`;
+    document.getElementById('card-sun-rashi').textContent = `सूर्य राशि: ${data.sunRashi}`;
+
+    document.getElementById('muhurat-abhijit').textContent = data.abhijit;
+    document.getElementById('muhurat-brahma').textContent = data.brahma;
+    document.getElementById('muhurat-amrit').textContent = data.amrit;
+    document.getElementById('muhurat-vijaya').textContent = data.vijaya;
+
+    document.getElementById('ashubh-rahu').textContent = data.rahu;
+    document.getElementById('ashubh-yama').textContent = data.yama;
+    document.getElementById('ashubh-gulika').textContent = data.gulika;
+    document.getElementById('ashubh-disha').textContent = data.dishaShool;
+
+    renderChoghadiya(data);
+    safeCreateIcons();
+}
+
+function setTodayAndCalculate() {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    document.getElementById('panchang-date').value = `${yyyy}-${mm}-${dd}`;
+    calculateAndRenderPanchang();
+}
+
+function changeDay(offsetDays) {
+    const dateInput = document.getElementById('panchang-date');
+    const parts = dateInput.value.split('-');
+    const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    d.setDate(d.getDate() + offsetDays);
+    document.getElementById('panchang-date').value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    calculateAndRenderPanchang();
+}
+
+function selectCityShortcut(cityKey) {
+    document.getElementById('panchang-city').value = cityKey;
+    calculateAndRenderPanchang();
+    document.getElementById('panchang-calculator').scrollIntoView({ behavior: 'smooth' });
+    showToast(`${CITIES[cityKey].name} का पंचांग अपडेट किया गया`);
+}
+
+function jumpToFestivalDate(isoDate) {
+    document.getElementById('panchang-date').value = isoDate;
+    calculateAndRenderPanchang();
+    document.getElementById('panchang-calculator').scrollIntoView({ behavior: 'smooth' });
+    showToast("चयनित पर्व की तिथि का पंचांग लोड किया गया");
+}
+
+const LEGAL_PAGES = {
+    about: {
+        title: "हमारे बारे में (About Us) - हिन्दी पंचांग",
+        html: `<p><strong>हिन्दी पंचांग (Hindi Panchang)</strong> एक आधुनिक भारतीय डिजिटल कैलेंडर और खगोलीय पंचांग मंच है, जिसका उद्देश्य सनातन धर्म की प्राचीन कालगणना पद्धति को सरल, सटीक और निःशुल्क रूप में जन-जन तक पहुँचाना है।</p><p>हमारी गणनाएँ पारंपरिक <strong>दृक गणित</strong> और खगोलीय सिद्धांतों पर आधारित हैं।</p>`
+    },
+    privacy: {
+        title: "गोपनीयता नीति (Privacy Policy)",
+        html: `<p><strong>हिन्दी पंचांग</strong> पर आगंतुकों की गोपनीयता अत्यंत महत्वपूर्ण है। हमारी वेबसाइट पर विज्ञापन दिखाने के लिए <strong>Google AdSense</strong> DART कुकीज़ का उपयोग कर सकता है। हम आपका कोई भी निजी डेटा किसी तीसरे पक्ष को नहीं बेचते हैं।</p>`
+    },
+    disclaimer: {
+        title: "अस्वीकरण (Disclaimer)",
+        html: `<p>यहाँ प्रकाशित समस्त पंचांग व मुहूर्त विवरण सामान्य धार्मिक एवं शैक्षणिक जानकारी के लिए हैं। किसी भी विशेष मांगलिक अनुष्ठान से पूर्व योग्य ज्योतिषाचार्य से परामर्श अवश्य लें।</p>`
+    },
+    contact: {
+        title: "संपर्क करें (Contact Us)",
+        html: `<p>किसी भी प्रश्न या सुझाव के लिए हमें ईमेल करें: <strong>contact@hindipanchang.in</strong></p>`
+    }
+};
+
+function openLegalModal(pageKey) {
+    const page = LEGAL_PAGES[pageKey] || LEGAL_PAGES.about;
+    document.getElementById('legal-modal-title').textContent = page.title;
+    document.getElementById('legal-modal-body').innerHTML = page.html;
+    document.getElementById('legal-modal').classList.remove('hidden');
+}
+
+function closeLegalModal() {
+    document.getElementById('legal-modal').classList.add('hidden');
+}
+
+function toggleMobileMenu() {
+    document.getElementById('mobile-menu').classList.toggle('hidden');
+}
+
+function showToast(msg) {
+    const box = document.getElementById('toast-box');
+    document.getElementById('toast-message').textContent = msg;
+    box.classList.remove('hidden');
+    setTimeout(() => box.classList.add('hidden'), 3000);
+}
+
+function copyPanchangSummary() {
+    if (!currentPanchangData) return;
+    const d = currentPanchangData;
+    const text = `॥ श्री गणेशाय नमः ॥\nआज का पंचांग (${d.city.name})\nदिनांक: ${document.getElementById('res-hindi-date-title').textContent}\nतिथि: ${d.tithi} | नक्षत्र: ${d.nakshatra}\nसूर्योदय: ${d.sunrise} | सूर्यास्त: ${d.sunset}\nअभिजीत मुहूर्त: ${d.abhijit}\nराहुकाल: ${d.rahu}`;
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    showToast("आज का पंचांग कॉपी हो गया!");
+}
+
+function updateLiveClock() {
+    const now = new Date();
+    document.getElementById('live-clock').textContent = now.toLocaleTimeString('en-IN', {
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+    }) + ' IST';
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    safeCreateIcons();
+    updateLiveClock();
+    setInterval(updateLiveClock, 1000);
+    setTodayAndCalculate();
+});

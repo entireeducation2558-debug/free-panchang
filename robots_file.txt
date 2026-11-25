@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://hindipanchang.in/sitemap.xml
